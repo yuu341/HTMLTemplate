@@ -21,6 +21,9 @@ module.exports = function(grunt){
         }
       }
     },
+    validation:{
+      
+    }
     watch:{
       options:{
         livereload: true //変更があればリロード
@@ -44,6 +47,7 @@ module.exports = function(grunt){
   grunt.loadNpmTasks('grunt-contrib-cssmin');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-connect');
+  grunt.loadNpmTasks('grunt-w3c-html-validation');
 
   //task
   grunt.registerTask('default' , ['connect' , 'watch' ]);
