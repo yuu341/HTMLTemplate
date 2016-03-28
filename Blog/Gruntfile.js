@@ -22,14 +22,16 @@ module.exports = function(grunt){
       }
     },
     validation:{
-      
-    }
+      files:{
+        src:"**/*.html"
+      }
+    },
     watch:{
       options:{
         livereload: true //変更があればリロード
       },
       files: ['css/*.less' , 'scripts/*.js' , 'index.html'],
-      tasks: ['less' , 'csslint' , 'cssmin']
+      tasks: [ 'validation' , 'less' , 'csslint' , 'cssmin']
     },
     connect : {
       server:{
