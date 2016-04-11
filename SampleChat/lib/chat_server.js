@@ -30,6 +30,7 @@ export = function(server){
   });
 }
 
+//ゲスト名の割り当て
 function assignGuestName(socket , guestNumber , nickNames , namesUsed){
   var name = 'Guest' + guestNumber;
 
@@ -41,6 +42,7 @@ function assignGuestName(socket , guestNumber , nickNames , namesUsed){
   return guestNumber + 1;
 }
 
+//ルームへの参加
 function joinRoom(socket , room){
   socket.join(room);
 
@@ -59,6 +61,65 @@ function joinRoom(socket , room){
 
     for(var index in usersInRoom){
       var userSocketId = usersInRoom[index].id;
-      
+
+      if(userSocketId != socket.id){
+        if(index > 0){
+          usersInRoomSummary += ', ';
+        }
+        usersInRoomSummary += nickNames[userSocketId];
+      }
     }
+    usersInRoomSummary += '.';
+    socket.emit('message', {text: usersInRoomSummary});
   }
+}
+
+//名前変更要求の処理
+function handleNameChangeAttempts(socket, nickNames, namesUsed){
+  socket.on('nameAttempt', function(name){
+    if(name.indexOf('Guest') == 0){
+      socket.emit('nameResult', {
+        success: false, message:'Names cannot begin with "Guest".'
+      });
+    }else{
+      if(namesUsed.indexOf(name) == -1){
+        var previousName = nickNames[socket.id];
+        var previousNameIndex = namesUsed.indexOf(previousName);
+        namesUsed.push(name);
+        nickNames[socket.id] = name;
+        delete namesUsed[previousNameIndex];
+
+        socket.emit('nameResult' , { success: true , name: name});
+        socket.broadcast.to(currentRoom[socket.id]).emit('message' , { text: previousName + ' is now known as ' + name + '.'});
+      }else{
+        socket.emit('nameResult', { success: false , message: 'That name is already in use.'});
+      }
+    }
+  });
+}
+
+//チャットメッセージの送信
+function handleMessageBroadcasting(socket){
+  socket.on('message' , function(message){
+    socket.broadcast.to(message.room).emit('message' , {
+      text: nickNames[socket.id] + ': ' + message.text
+    });
+  });
+}
+
+//ルーム変更
+function handleRoomJoining(socket){
+  socket.on('join' , function(room){
+    socket.leave(currentRoom[socket.id]);
+    joinRoom(socket,room.newRoom);
+  });
+}
+
+//ユーザ接続断
+function handleClientDisconnection(socket){
+  socket.on('disconnect' , function(){
+    var nameIndex = namesUsed.indexOf(nickNames[socket.id]);
+    delete namesUsed[nameIndex];
+    delete nickNames[socket.id];
+  });
+}
